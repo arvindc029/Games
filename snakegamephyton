@@ -1,0 +1,75 @@
+import random
+import curses
+
+def main(stdscr):
+    # Setup
+    curses.curs_set(0)  # Hide the cursor
+    stdscr.nodelay(1)   # Make getch non-blocking
+    stdscr.timeout(100) # Set a timeout for getch
+    sh, sw = stdscr.getmaxyx()  # Get screen dimensions
+
+    # Initial snake position and direction
+    snake_x = sw // 4
+    snake_y = sh // 2
+    snake = [
+        [snake_y, snake_x],
+        [snake_y, snake_x - 1],
+        [snake_y, snake_x - 2]
+    ]
+    direction = curses.KEY_RIGHT
+
+    # Food initial position
+    food = [sh // 2, sw // 2]
+    stdscr.addch(food[0], food[1], curses.ACS_PI)
+
+    # Game loop
+    score = 0
+    while True:
+        new_direction = stdscr.getch()
+
+        # Change direction if a valid key is pressed
+        if snake[0][0] in [0, sh] or snake[0][1] in [0, sw] or snake[0] in snake[1:]:
+            stdscr.addstr(sh // 2, sw // 2 - 10, "Game Over! Press Q to Quit.")
+            stdscr.refresh()
+            key = -1
+            while key not in [ord('q'), ord('Q')]:
+                key = stdscr.getch()
+            break
+
+        # Move the snake
+        new_head = [snake[0][0], snake[0][1]]
+
+        if new_direction == curses.KEY_DOWN:
+            new_head[0] += 1
+        if new_direction == curses.KEY_UP:
+            new_head[0] -= 1
+        if new_direction == curses.KEY_LEFT:
+            new_head[1] -= 1
+        if new_direction == curses.KEY_RIGHT:
+            new_head[1] += 1
+
+        snake.insert(0, new_head)
+
+        # Check if the snake eats the food
+        if snake[0] == food:
+            score += 1
+            food = None  # Generate new food
+            while food is None:
+                nf = [
+                    random.randint(1, sh - 1),
+                    random.randint(1, sw - 1)
+                ]
+                food = nf if nf not in snake else None
+            stdscr.addch(food[0], food[1], curses.ACS_PI)
+        else:
+            # Move the snake
+            tail = snake.pop()
+            stdscr.addch(tail[0], tail[1], ' ')
+
+        stdscr.addch(snake[0][0], snake[0][1], curses.ACS_CKBOARD)
+
+    stdscr.getch()  # Wait for a key press before exiting
+
+# Run the game
+if __name__ == "__main__":
+    curses.wrapper(main)
